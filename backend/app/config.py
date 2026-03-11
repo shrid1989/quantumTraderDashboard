@@ -39,7 +39,12 @@ CORS_ORIGINS = [
     "http://127.0.0.1:8000",
 ]
 if _frontend_url:
-    CORS_ORIGINS.append(_frontend_url)
+    # Add the exact URL and strip any trailing slash
+    clean_url = _frontend_url.rstrip("/")
+    CORS_ORIGINS.append(clean_url)
+
+# Allow all Vercel preview/production domains
+CORS_ORIGIN_REGEX = r"https://.*\.vercel\.app"
 
 # Logging Configuration
 LOG_LEVEL = "INFO"

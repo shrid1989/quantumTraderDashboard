@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from datetime import datetime
 
-from app.config import API_TITLE, API_VERSION, API_DESCRIPTION, CORS_ORIGINS, IS_LOCAL
+from app.config import API_TITLE, API_VERSION, API_DESCRIPTION, CORS_ORIGINS, CORS_ORIGIN_REGEX, IS_LOCAL
 from app.utils.logger import get_logger
 from app.utils.exceptions import QuantumTraderException
 from app.database import get_db_client
@@ -26,6 +26,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
