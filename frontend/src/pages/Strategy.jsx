@@ -4,7 +4,6 @@ import { strategyAPI } from "../services/api";
 import "../styles/strategy.css";
 
 function StrategyPage() {
-  const [strategies, setStrategies] = useState([]);
   const [performances, setPerformances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,7 +33,6 @@ function StrategyPage() {
           ? performanceData.data
           : performanceData.data?.data || [];
 
-        setStrategies(strategiesArray);
         setPerformances(performancesArray);
 
         // Log for debugging
