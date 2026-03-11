@@ -1,0 +1,136 @@
+name: QuantumTrader Dashboard CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  AWS_REGION: ap-south-1
+  REGISTRY: YOUR_AWS_ACCOUNT.dkr.ecr.ap-south-1.amazonaws.com
+  BACKEND_IMAGE: quantumtrader-backend
+  FRONTEND_IMAGE: quantumtrader-frontend
+
+jobs:
+  # Test Backend
+  test-backend:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt pytest
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          python -m pytest tests/ -v
+
+  # Test Frontend
+  test-frontend:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ["18"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npm test -- --passWithNoTests
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+  # Build and Push Docker Images
+  build-and-push:
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload to ECR - Backend
+        run: |
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.REGISTRY }}
+          docker build -t ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest backend/
+          docker push ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Upload to ECR - Frontend
+        run: |
+          docker build -t ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest frontend/
+          docker push ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
+
+  # Deploy to CloudFormation (optional, commented out for now)
+  # deploy-aws:
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #
+  #   permissions:
+  #     contents: read
+  #     id-token: write
+  #
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v2
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
+  #
+  #     - name: Deploy DynamoDB Stack
+  #       run: |
+  #         aws cloudformation deploy \
+  #           --template-file infra/cloudformation/dashboard-dynamodb.yaml \
+  #           --stack-name quantumtrader-dynamodb \
+  #           --parameter-overrides EnvironmentName=production \
+  #           --region ${{ env.AWS_REGION }}
+  #
+  #     - name: Deploy Backend Stack
+  #       run: |
+  #         aws cloudformation deploy \
+  #           --template-file infra/cloudformation/dashboard-ecs.yaml \
+  #           --stack-name quantumtrader-backend \
+  #           --parameter-overrides BackendImage=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest \
+  #           --region ${{ env.AWS_REGION }}

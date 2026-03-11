@@ -1,0 +1,4 @@
+date,nifty_value,strategy,entry_reason,option_strike,sold_option,position_type,entry_time,entry_premium,exit_time,exit_premium,exit_reason,quantity,pnl,pivot,s1,s2,r1,r2
+2026-03-10,22550.0,reversal_pivot_supertrend,ST_FLIP_BULLISH,22550,NIFTY17MAR2622550PE,short_put,10:15:00,85.5,13:45:00,45.0,pivot_support_broken,1,40.5,,,,,
+2026-03-10,22500,short_straddle_vwap,VWAP_BELOW,22500,NIFTY17MAR2622500CE + NIFTY17MAR2622500PE,short_straddle,09:30:00,265.0,15:16:00,265.0,market_close,1,0.0,,,,,
+2026-03-10,22450.0,short_straddle_vwap,VWAP_BELOW,, + ,short_straddle,09:45:00,,11:20:00,,target_hit,1,50.0,,,,,

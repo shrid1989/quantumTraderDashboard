@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "QuantumTrader Dashboard - DynamoDB Table"
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+Resources:
+  # DynamoDB Table
+  TradesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "QuantumTrader-Trades-${EnvironmentName}"
+      BillingMode: PAY_PER_REQUEST # On-demand pricing (cost-effective for low usage)
+
+      # Primary Key
+      AttributeDefinitions:
+        - AttributeName: trade_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+        - AttributeName: date
+          AttributeType: S
+        - AttributeName: strategy
+          AttributeType: S
+        - AttributeName: pnl
+          AttributeType: N
+
+      # Primary Key Schema (Partition + Sort)
+      KeySchema:
+        - AttributeName: trade_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+
+      # Global Secondary Indexes for queries
+      GlobalSecondaryIndexes:
+        # Index for date-based queries
+        - IndexName: date-pnl-index
+          KeySchema:
+            - AttributeName: date
+              KeyType: HASH
+            - AttributeName: pnl
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+        # Index for strategy-based queries
+        - IndexName: strategy-pnl-index
+          KeySchema:
+            - AttributeName: strategy
+              KeyType: HASH
+            - AttributeName: pnl
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+      # Point-in-time recovery for backup
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+      # TTL not required (keep all trades indefinitely)
+
+      # Streaming for real-time updates (optional)
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+      # Tags for organization
+      Tags:
+        - Key: Application
+          Value: QuantumTrader
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+Outputs:
+  TradesTableName:
+    Description: Name of the DynamoDB Table
+    Value: !Ref TradesTable
+    Export:
+      Name: !Sub "${AWS::StackName}-TableName"
+
+  TradesTableArn:
+    Description: ARN of the DynamoDB Table
+    Value: !GetAtt TradesTable.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-TableArn"
+
+  TradesTableStreamArn:
+    Description: Stream ARN for DynamoDB Table
+    Value: !GetAtt TradesTable.StreamArn
+    Export:
+      Name: !Sub "${AWS::StackName}-StreamArn"
