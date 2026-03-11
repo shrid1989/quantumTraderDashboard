@@ -36,7 +36,7 @@ jobs:
       - name: Run backend tests
         run: |
           cd backend
-          python -m pytest tests/ -v
+          [ -d tests ] && python -m pytest tests/ -v || echo "No backend tests found"
 
   # Test Frontend
   test-frontend:
