@@ -77,3 +77,4 @@ backend/.env
 claude.md
 backend/lambda/package
 lambda_deployment.zip
+*.csv

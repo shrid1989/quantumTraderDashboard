@@ -45,7 +45,15 @@ def lambda_handler(event, context):
 
         # Download CSV from S3
         response = s3_client.get_object(Bucket=bucket, Key=key)
-        csv_content = response["Body"].read().decode("utf-8")
+        raw_bytes = response["Body"].read()
+        for encoding in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
+            try:
+                csv_content = raw_bytes.decode(encoding)
+                break
+            except (UnicodeDecodeError, LookupError):
+                continue
+        else:
+            return error_response("Could not decode CSV: unsupported file encoding")
         logger.info(f"✓ Downloaded CSV from S3: {key}")
 
         # Parse CSV and build rows
@@ -68,7 +76,8 @@ def lambda_handler(event, context):
 def parse_csv(csv_content: str, logger) -> list:
     """Parse CSV content into list of trade dicts for Supabase"""
     rows = []
-    lines = csv_content.strip().split("\n")
+    # splitlines() handles \r\n (Windows), \n (Unix), \r (old Mac) correctly
+    lines = csv_content.splitlines()
     reader = csv.DictReader(lines)
 
     for row_num, row in enumerate(reader, start=2):
@@ -78,8 +87,12 @@ def parse_csv(csv_content: str, logger) -> list:
             strategy = row.get("strategy", "").strip()
             nifty_value = row.get("nifty_value", "0").strip()
 
+            # Silently skip blank rows (Excel pads sheets with thousands of empty rows)
+            if not any(v.strip() for v in row.values() if v):
+                continue
+
             if not date or not strategy:
-                logger.warning(f"Row {row_num}: missing required fields, skipping")
+                logger.warning(f"Row {row_num}: missing required fields (date={date!r}, strategy={strategy!r}), skipping")
                 continue
 
             trade_id = f"{date}#{nifty_value}#{entry_time}#{strategy}"
