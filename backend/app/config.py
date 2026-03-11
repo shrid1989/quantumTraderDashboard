@@ -21,9 +21,9 @@ JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_DAYS = 7
 
-# Single User Credentials
-USER_EMAIL = os.getenv("USER_EMAIL", "trader@quantumtrader.com")
-USER_PASSWORD = os.getenv("USER_PASSWORD", "admin@123")
+# Single User Credentials (must be set via environment variables — no hardcoded defaults)
+USER_EMAIL = os.getenv("USER_EMAIL", "")
+USER_PASSWORD = os.getenv("USER_PASSWORD", "")
 
 # API Configuration
 API_TITLE = "QuantumTrader Dashboard API"
@@ -53,36 +53,3 @@ LOG_DIR = "./logs" if IS_LOCAL else "/tmp/intraday/logs"
 # CSV Configuration
 CSV_UPLOAD_MAX_SIZE_MB = 10
 SUPPORTED_CSV_FORMATS = [".csv"]
-
-# Authentication
-JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_DAYS = 7
-
-# Single User Credentials
-USER_EMAIL = os.getenv("USER_EMAIL", "trader@quantumtrader.com")
-USER_PASSWORD = os.getenv("USER_PASSWORD", "admin@123")
-
-# API Configuration
-API_TITLE = "QuantumTrader Dashboard API"
-API_VERSION = "1.0.0"
-API_DESCRIPTION = "Trading bot performance dashboard with S3 auto-sync"
-
-# CORS Configuration
-CORS_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8000",
-]
-
-# Logging Configuration
-LOG_LEVEL = "INFO"
-LOG_DIR = "./logs" if IS_LOCAL else "/tmp/intraday/logs"
-
-# CSV Configuration
-CSV_UPLOAD_MAX_SIZE_MB = 10
-SUPPORTED_CSV_FORMATS = [".csv"]
-
-# Lambda Configuration
-LAMBDA_API_KEY = os.getenv("DASHBOARD_API_KEY", "default-api-key")

@@ -8,8 +8,8 @@ import "../styles/login.css";
 function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState("trader@quantumtrader.com");
-  const [password, setPassword] = useState("admin@123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -69,9 +69,7 @@ function LoginPage() {
         </form>
 
         <div className="login-footer">
-          <p>Demo credentials</p>
-          <small>Email: trader@quantumtrader.com</small>
-          <small>Password: admin@123</small>
+          <p>QuantumTrader Dashboard</p>
         </div>
       </div>
     </div>
