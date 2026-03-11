@@ -1,15 +1,16 @@
 """
 AWS Lambda Function for QuantumTrader S3 Auto-Sync
 Triggered when trading bot uploads CSV to S3
-Writes directly to Supabase PostgreSQL
+Writes directly to Supabase PostgreSQL via REST API (no external dependencies)
 """
 import json
 import boto3
 import csv
 import os
 import re
+import urllib.request
+import urllib.error
 from datetime import datetime
-from supabase import create_client
 
 s3_client = boto3.client("s3")
 
@@ -52,10 +53,8 @@ def lambda_handler(event, context):
         if not rows:
             return error_response("No valid rows parsed from CSV")
 
-        # Write to Supabase
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        result = supabase.table("trades").upsert(rows, on_conflict="trade_id").execute()
-        trades_added = len(result.data) if result.data else 0
+        # Write to Supabase via REST API
+        trades_added = upsert_to_supabase(rows, logger)
 
         logger.info(f"✓ Upserted {trades_added} trades to Supabase")
         return success_response(f"Synced {trades_added} trades", {"trades_added": trades_added})
@@ -128,6 +127,33 @@ def parse_csv(csv_content: str, logger) -> list:
             continue
 
     return rows
+
+
+def upsert_to_supabase(rows: list, logger) -> int:
+    """Upsert trades to Supabase via PostgREST API (no supabase-py needed)"""
+    url = f"{SUPABASE_URL}/rest/v1/trades"
+    data = json.dumps(rows).encode("utf-8")
+
+    req = urllib.request.Request(
+        url,
+        data=data,
+        method="POST",
+        headers={
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates,return=representation",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode("utf-8"))
+            return len(result) if isinstance(result, list) else len(rows)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8")
+        logger.error(f"Supabase API error {e.code}: {body}")
+        raise
 
 
 def is_valid_trades_file(filename):

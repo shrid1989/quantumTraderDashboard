@@ -1,2 +1,2 @@
-boto3==1.28.85
-supabase==2.4.3
+# boto3 is provided by the Lambda runtime — no external packages needed
+# All Supabase calls use urllib (Python stdlib) to avoid compiled extensions
