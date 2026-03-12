@@ -14,7 +14,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import "../styles/dashboard.css";
@@ -24,7 +23,6 @@ const COLORS = ["#00897b", "#1976d2", "#f57c00", "#c62828", "#7b1fa2"];
 
 function DashboardPage() {
   const [kpis, setKpis] = useState(null);
-  const [recentTrades, setRecentTrades] = useState([]);
   const [chartData, setChartData] = useState(null);
   const [monthlyData, setMonthlyData] = useState(null);
   const [allTrades, setAllTrades] = useState([]);
@@ -65,7 +63,6 @@ function DashboardPage() {
       const tradesResponse = await tradesAPI.getAllTrades(500);
       const trades = tradesResponse.data || [];
       setAllTrades(trades);
-      setRecentTrades(trades.slice(0, 5));
     } catch (error) {
       toast.error("Failed to load dashboard data");
       console.error(error);
