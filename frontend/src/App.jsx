@@ -10,6 +10,7 @@ import TradesPage from "./pages/Trades";
 import StrategyPage from "./pages/Strategy";
 import UploadPage from "./pages/Upload";
 import SettingsPage from "./pages/Settings";
+import DayWisePage from "./pages/DayWise";
 
 // Components
 import Layout from "./components/Layout";
@@ -132,6 +133,20 @@ function App() {
                   toggleDarkMode={() => setDarkMode(!darkMode)}
                 >
                   <SettingsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/daywise"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Layout
+                  darkMode={darkMode}
+                  toggleDarkMode={() => setDarkMode(!darkMode)}
+                >
+                  <DayWisePage />
                 </Layout>
               </ProtectedRoute>
             }

@@ -2,7 +2,11 @@
 
 .trades-page {
   padding: 2rem;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
   min-height: 100vh;
 }
 
@@ -359,7 +363,11 @@
 }
 
 .trades-table thead {
-  background: linear-gradient(90deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 0%,
+    var(--bg-secondary) 100%
+  );
   border-bottom: 2px solid var(--accent-primary);
   position: sticky;
   top: 0;
@@ -859,7 +867,7 @@
 
 @media (max-width: 480px) {
   .trades-page {
-    padding: 0.8rem;
+    padding: 0.75rem;
   }
 
   .header-top h1 {
@@ -877,15 +885,21 @@
   }
 
   .quick-date-filters {
-    flex-direction: column;
+    gap: 0.4rem;
   }
 
   .date-btn {
-    width: 100%;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.75rem;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
   }
 
   .date-picker-popup {
     min-width: 280px;
+    right: auto;
+    left: 0;
   }
 
   .detail-grid {

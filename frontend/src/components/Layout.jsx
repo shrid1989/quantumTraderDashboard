@@ -52,6 +52,12 @@ function Layout({ children, darkMode, toggleDarkMode }) {
       </header>
 
       <div className="layout-body">
+        {/* Mobile overlay backdrop */}
+        <div
+          className={`sidebar-overlay ${sidebarOpen ? "open" : ""}`}
+          onClick={() => setSidebarOpen(false)}
+        />
+
         {/* Sidebar */}
         <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
           <nav className="nav-menu">
@@ -89,6 +95,13 @@ function Layout({ children, darkMode, toggleDarkMode }) {
               onClick={() => setSidebarOpen(false)}
             >
               ⚙️ Settings
+            </Link>
+            <Link
+              to="/daywise"
+              className={`nav-item ${isActive("/daywise") ? "active" : ""}`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              📅 Day Wise
             </Link>
           </nav>
         </aside>
