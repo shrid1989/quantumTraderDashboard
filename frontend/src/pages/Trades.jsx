@@ -10,7 +10,7 @@ function TradesPage() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStrategy, setFilterStrategy] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("1day");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
@@ -35,7 +35,10 @@ function TradesPage() {
   // Close picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (datePickerRef.current && !datePickerRef.current.contains(event.target)) {
+      if (
+        datePickerRef.current &&
+        !datePickerRef.current.contains(event.target)
+      ) {
         setShowCustomDatePicker(false);
       }
     };
@@ -47,18 +50,21 @@ function TradesPage() {
   // Get date range based on filter
   const getDateRange = () => {
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const twoDaysAgo = new Date(today);
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-
     const formatDate = (date) => date.toISOString().split("T")[0];
+
+    const subtractDays = (n) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - n);
+      return formatDate(d);
+    };
 
     switch (dateFilter) {
       case "1day":
         return { start: formatDate(today), end: formatDate(today) };
-      case "2day":
-        return { start: formatDate(yesterday), end: formatDate(today) };
+      case "1week":
+        return { start: subtractDays(7), end: formatDate(today) };
+      case "1month":
+        return { start: subtractDays(30), end: formatDate(today) };
       case "custom":
         return { start: customStartDate, end: customEndDate };
       case "all":
@@ -75,7 +81,8 @@ function TradesPage() {
         trade.strategy.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trade.date.includes(searchTerm) ||
         trade.entry_reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (trade.sold_option && trade.sold_option.toLowerCase().includes(searchTerm.toLowerCase()));
+        (trade.sold_option &&
+          trade.sold_option.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchStrategy =
         filterStrategy === "all" || trade.strategy === filterStrategy;
@@ -84,7 +91,8 @@ function TradesPage() {
       const dateRange = getDateRange();
       let matchDate = true;
       if (dateRange.start && dateRange.end) {
-        matchDate = trade.date >= dateRange.start && trade.date <= dateRange.end;
+        matchDate =
+          trade.date >= dateRange.start && trade.date <= dateRange.end;
       }
 
       return matchSearch && matchStrategy && matchDate;
@@ -107,7 +115,10 @@ function TradesPage() {
 
   const strategies = [...new Set(trades.map((t) => t.strategy))];
 
-  const totalPnL = processedTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
+  const totalPnL = processedTrades.reduce(
+    (sum, trade) => sum + (trade.pnl || 0),
+    0,
+  );
   const winningTrades = processedTrades.filter((t) => t.pnl > 0).length;
   const losingTrades = processedTrades.filter((t) => t.pnl < 0).length;
   const breakEvenTrades = processedTrades.filter((t) => t.pnl === 0).length;
@@ -192,13 +203,19 @@ function TradesPage() {
               className={`date-btn ${dateFilter === "1day" ? "active" : ""}`}
               onClick={() => setDateFilter("1day")}
             >
-              Last 1 Day
+              Today
             </button>
             <button
-              className={`date-btn ${dateFilter === "2day" ? "active" : ""}`}
-              onClick={() => setDateFilter("2day")}
+              className={`date-btn ${dateFilter === "1week" ? "active" : ""}`}
+              onClick={() => setDateFilter("1week")}
             >
-              Last 2 Days
+              1 Week
+            </button>
+            <button
+              className={`date-btn ${dateFilter === "1month" ? "active" : ""}`}
+              onClick={() => setDateFilter("1month")}
+            >
+              1 Month
             </button>
             <div className="custom-date-wrapper" ref={datePickerRef}>
               <button
@@ -299,29 +316,51 @@ function TradesPage() {
                 <th onClick={() => handleSort("date")} className="sortable">
                   <span className="th-content">
                     Date
-                    {sortBy === "date" && <span className="sort-icon">{sortOrder === "asc" ? "▲" : "▼"}</span>}
+                    {sortBy === "date" && (
+                      <span className="sort-icon">
+                        {sortOrder === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
                   </span>
                 </th>
-                <th onClick={() => handleSort("nifty_value")} className="sortable">
+                <th
+                  onClick={() => handleSort("nifty_value")}
+                  className="sortable"
+                >
                   <span className="th-content">
                     NIFTY
-                    {sortBy === "nifty_value" && <span className="sort-icon">{sortOrder === "asc" ? "▲" : "▼"}</span>}
+                    {sortBy === "nifty_value" && (
+                      <span className="sort-icon">
+                        {sortOrder === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
                   </span>
                 </th>
                 <th onClick={() => handleSort("strategy")} className="sortable">
                   <span className="th-content">
                     Strategy
-                    {sortBy === "strategy" && <span className="sort-icon">{sortOrder === "asc" ? "▲" : "▼"}</span>}
+                    {sortBy === "strategy" && (
+                      <span className="sort-icon">
+                        {sortOrder === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
                   </span>
                 </th>
                 <th>Entry Reason</th>
                 <th>Sold Option</th>
                 <th>Position</th>
                 <th>Entry → Exit Time</th>
-                <th onClick={() => handleSort("entry_premium")} className="sortable">
+                <th
+                  onClick={() => handleSort("entry_premium")}
+                  className="sortable"
+                >
                   <span className="th-content">
                     Entry / Exit Premium
-                    {sortBy === "entry_premium" && <span className="sort-icon">{sortOrder === "asc" ? "▲" : "▼"}</span>}
+                    {sortBy === "entry_premium" && (
+                      <span className="sort-icon">
+                        {sortOrder === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
                   </span>
                 </th>
                 <th>Exit Reason</th>
@@ -329,7 +368,11 @@ function TradesPage() {
                 <th onClick={() => handleSort("pnl")} className="sortable">
                   <span className="th-content">
                     P&L
-                    {sortBy === "pnl" && <span className="sort-icon">{sortOrder === "asc" ? "▲" : "▼"}</span>}
+                    {sortBy === "pnl" && (
+                      <span className="sort-icon">
+                        {sortOrder === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
                   </span>
                 </th>
               </tr>
@@ -339,40 +382,66 @@ function TradesPage() {
                 <React.Fragment key={idx}>
                   <tr
                     className={`trade-row ${
-                      trade.pnl > 0 ? "profitable" : trade.pnl < 0 ? "loss" : "neutral"
+                      trade.pnl > 0
+                        ? "profitable"
+                        : trade.pnl < 0
+                          ? "loss"
+                          : "neutral"
                     }`}
                   >
-                    <td className="cell-expand" onClick={() => setExpandedRow(expandedRow === idx ? null : idx)}>
-                      <span className={`chevron-icon ${expandedRow === idx ? "open" : ""}`}>▶</span>
+                    <td
+                      className="cell-expand"
+                      onClick={() =>
+                        setExpandedRow(expandedRow === idx ? null : idx)
+                      }
+                    >
+                      <span
+                        className={`chevron-icon ${expandedRow === idx ? "open" : ""}`}
+                      >
+                        ▶
+                      </span>
                     </td>
                     <td className="cell-date">{trade.date}</td>
                     <td className="cell-nifty">{trade.nifty_value}</td>
                     <td className="cell-strategy">
-                      <span className="strategy-badge-compact">{trade.strategy}</span>
+                      <span className="strategy-badge-compact">
+                        {trade.strategy}
+                      </span>
                     </td>
                     <td className="cell-reason" title={trade.entry_reason}>
                       {trade.entry_reason}
                     </td>
-                    <td className="cell-option" title={trade.sold_option || "N/A"}>
+                    <td
+                      className="cell-option"
+                      title={trade.sold_option || "N/A"}
+                    >
                       {trade.sold_option ? trade.sold_option : "—"}
                     </td>
                     <td className="cell-position">
                       <span className={`badge-position ${trade.position_type}`}>
-                        {trade.position_type.replace(/_/g, ' ')}
+                        {trade.position_type.replace(/_/g, " ")}
                       </span>
                     </td>
                     <td className="cell-time-range">
                       <div className="time-range-compact">
-                        <span className="entry-time-compact">{trade.entry_time}</span>
+                        <span className="entry-time-compact">
+                          {trade.entry_time}
+                        </span>
                         <span className="arrow-compact">→</span>
-                        <span className="exit-time-compact">{trade.exit_time}</span>
+                        <span className="exit-time-compact">
+                          {trade.exit_time}
+                        </span>
                       </div>
                     </td>
                     <td className="cell-premium-range">
                       <div className="premium-range-compact">
-                        <span className="prem-entry-compact">₹{Number(trade.entry_premium || 0).toFixed(1)}</span>
+                        <span className="prem-entry-compact">
+                          ₹{Number(trade.entry_premium || 0).toFixed(1)}
+                        </span>
                         <span className="slash-compact">/</span>
-                        <span className="prem-exit-compact">₹{Number(trade.exit_premium || 0).toFixed(1)}</span>
+                        <span className="prem-exit-compact">
+                          ₹{Number(trade.exit_premium || 0).toFixed(1)}
+                        </span>
                       </div>
                     </td>
                     <td className="cell-exit-reason" title={trade.exit_reason}>
@@ -385,11 +454,12 @@ function TradesPage() {
                           trade.pnl > 0
                             ? "pnl-positive"
                             : trade.pnl < 0
-                            ? "pnl-negative"
-                            : "pnl-neutral"
+                              ? "pnl-negative"
+                              : "pnl-neutral"
                         }`}
                       >
-                        {trade.pnl > 0 ? "+" : ""}₹{Number(trade.pnl || 0).toFixed(2)}
+                        {trade.pnl > 0 ? "+" : ""}₹
+                        {Number(trade.pnl || 0).toFixed(2)}
                       </span>
                     </td>
                   </tr>
@@ -400,38 +470,56 @@ function TradesPage() {
                           <div className="detail-grid">
                             {trade.option_strike && (
                               <div className="detail-item">
-                                <span className="detail-label">Option Strike</span>
-                                <span className="detail-value">{trade.option_strike}</span>
+                                <span className="detail-label">
+                                  Option Strike
+                                </span>
+                                <span className="detail-value">
+                                  {trade.option_strike}
+                                </span>
                               </div>
                             )}
                             {trade.ce_symbol && (
                               <div className="detail-item">
                                 <span className="detail-label">CE Symbol</span>
-                                <span className="detail-value">{trade.ce_symbol}</span>
+                                <span className="detail-value">
+                                  {trade.ce_symbol}
+                                </span>
                               </div>
                             )}
                             {trade.pe_symbol && (
                               <div className="detail-item">
                                 <span className="detail-label">PE Symbol</span>
-                                <span className="detail-value">{trade.pe_symbol}</span>
+                                <span className="detail-value">
+                                  {trade.pe_symbol}
+                                </span>
                               </div>
                             )}
                             {trade.position_type && (
                               <div className="detail-item">
-                                <span className="detail-label">Position Type</span>
-                                <span className="detail-value">{trade.position_type.replace(/_/g, ' ')}</span>
+                                <span className="detail-label">
+                                  Position Type
+                                </span>
+                                <span className="detail-value">
+                                  {trade.position_type.replace(/_/g, " ")}
+                                </span>
                               </div>
                             )}
                             {trade.straddle_vwap && (
                               <div className="detail-item">
-                                <span className="detail-label">Straddle VWAP</span>
-                                <span className="detail-value">₹{Number(trade.straddle_vwap).toFixed(2)}</span>
+                                <span className="detail-label">
+                                  Straddle VWAP
+                                </span>
+                                <span className="detail-value">
+                                  ₹{Number(trade.straddle_vwap).toFixed(2)}
+                                </span>
                               </div>
                             )}
                             {trade.pivot && (
                               <div className="detail-item">
                                 <span className="detail-label">Pivot</span>
-                                <span className="detail-value">{trade.pivot}</span>
+                                <span className="detail-value">
+                                  {trade.pivot}
+                                </span>
                               </div>
                             )}
                             {trade.s1 && (
@@ -460,16 +548,24 @@ function TradesPage() {
                             )}
                             <div className="detail-item">
                               <span className="detail-label">Entry Reason</span>
-                              <span className="detail-value">{trade.entry_reason}</span>
+                              <span className="detail-value">
+                                {trade.entry_reason}
+                              </span>
                             </div>
                             <div className="detail-item">
                               <span className="detail-label">Exit Reason</span>
-                              <span className="detail-value">{trade.exit_reason}</span>
+                              <span className="detail-value">
+                                {trade.exit_reason}
+                              </span>
                             </div>
                             {trade.sold_option && (
                               <div className="detail-item">
-                                <span className="detail-label">Sold Option</span>
-                                <span className="detail-value">{trade.sold_option}</span>
+                                <span className="detail-label">
+                                  Sold Option
+                                </span>
+                                <span className="detail-value">
+                                  {trade.sold_option}
+                                </span>
                               </div>
                             )}
                           </div>

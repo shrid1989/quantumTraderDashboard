@@ -29,7 +29,7 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("metrics");
-  const [timePeriod, setTimePeriod] = useState("all"); // all, day, week, month, year
+  const [timePeriod, setTimePeriod] = useState("day"); // all, day, week, month, year
 
   const fetchData = async () => {
     try {
