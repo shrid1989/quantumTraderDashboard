@@ -32,8 +32,14 @@ def _candidate_keys_for_date(date: str) -> List[str]:
     """Build candidate S3 object keys for a date-based CSV file."""
     filename = f"trades_{date}.csv"
     prefix = (S3_PREFIX or "").strip("/")
+    year = date[0:4]
+    month = date[5:7]
     if prefix:
-        return [f"{prefix}/{filename}", filename]
+        return [
+            f"{prefix}/{year}/{month}/{filename}",
+            f"{prefix}/{filename}",
+            filename,
+        ]
     return [filename]
 
 
@@ -162,6 +168,7 @@ async def get_daily_csv_download(date: str):
 
     s3_client = _get_s3_client()
     key_found = None
+    access_denied_seen = False
 
     for key in _candidate_keys_for_date(date):
         try:
@@ -172,6 +179,10 @@ async def get_daily_csv_download(date: str):
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code in {"404", "NoSuchKey", "NotFound"}:
                 continue
+            if error_code in {"403", "AccessDenied"}:
+                access_denied_seen = True
+                logger.warning(f"⚠ Access denied while checking S3 object {key}")
+                continue
             logger.error(f"✗ Failed to check S3 object {key}: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -179,6 +190,11 @@ async def get_daily_csv_download(date: str):
             )
 
     if not key_found:
+        if access_denied_seen:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to CSV object path in S3",
+            )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"CSV file not found for {date}",
