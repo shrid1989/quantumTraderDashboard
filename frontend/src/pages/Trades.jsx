@@ -6,6 +6,7 @@ import "../styles/trades.css";
 function TradesPage() {
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingDate, setDownloadingDate] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
   const [searchTerm, setSearchTerm] = useState("");
@@ -148,6 +149,28 @@ function TradesPage() {
     setCustomEndDate("");
     setDateFilter("all");
     setShowCustomDatePicker(false);
+  };
+
+  const handleDownloadDayCsv = async (date) => {
+    try {
+      setDownloadingDate(date);
+      const response = await tradesAPI.getTradesCsvDownloadByDate(date);
+      const downloadUrl = response?.data?.download_url;
+
+      if (!downloadUrl) {
+        throw new Error("Download URL not found");
+      }
+
+      window.open(downloadUrl, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      const detail =
+        error?.response?.data?.detail ||
+        error?.message ||
+        "Failed to download CSV";
+      alert(detail);
+    } finally {
+      setDownloadingDate("");
+    }
   };
 
   if (loading) {
@@ -375,6 +398,7 @@ function TradesPage() {
                     )}
                   </span>
                 </th>
+                <th>Day CSV</th>
               </tr>
             </thead>
             <tbody>
@@ -462,10 +486,23 @@ function TradesPage() {
                         {Number(trade.pnl || 0).toFixed(2)}
                       </span>
                     </td>
+                    <td className="cell-day-csv">
+                      <button
+                        type="button"
+                        className="download-day-btn"
+                        onClick={() => handleDownloadDayCsv(trade.date)}
+                        disabled={downloadingDate === trade.date}
+                        title={`Download CSV for ${trade.date}`}
+                      >
+                        {downloadingDate === trade.date
+                          ? "Downloading..."
+                          : "Download"}
+                      </button>
+                    </td>
                   </tr>
                   {expandedRow === idx && (
                     <tr className="expanded-detail-row">
-                      <td colSpan="11">
+                      <td colSpan="13">
                         <div className="expanded-detail-content">
                           <div className="detail-grid">
                             {trade.option_strike && (

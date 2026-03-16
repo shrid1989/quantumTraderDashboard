@@ -49,6 +49,8 @@ export const tradesAPI = {
     api.get('/api/trades', { params: { limit, offset } }),
   getTradesByDate: (date) =>
     api.get(`/api/trades/date/${date}`),
+  getTradesCsvDownloadByDate: (date) =>
+    api.get(`/api/trades/date/${date}/download`),
   getTradesByStrategy: (strategy) =>
     api.get(`/api/trades/strategy/${strategy}`),
   filterTrades: (filters) =>
