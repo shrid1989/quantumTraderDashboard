@@ -1072,62 +1072,102 @@ function BacktestingPage() {
                     {/* Session Cards */}
                     {(() => {
                       try {
-                        return sessions.map((s, idx) => (
-                          <div key={s.id} className="bt-chart-container" style={{ marginBottom: "1rem" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem" }}>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem" }}>
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedCompare.includes(s.id)}
-                                    onChange={() => toggleCompareSelect(s.id)}
-                                    style={{ accentColor: TEAL }}
-                                  />
-                                  <h3 style={{ margin: 0, fontSize: "1rem" }}>{s.session_name}</h3>
-                                  {s.strategy_name && <span className="file-badge">{s.strategy_name}</span>}
+                        return sessions.map((s, idx) => {
+                          const pnl = parseFloat(s.net_pnl);
+                          const wr = parseFloat(s.win_rate);
+                          const pf = parseFloat(s.profit_factor);
+                          const sharpe = parseFloat(s.sharpe_ratio);
+                          const dd = parseFloat(s.max_drawdown);
+                          const exp = parseFloat(s.expectancy);
+                          const isProfitable = pnl >= 0;
+
+                          return (
+                          <div key={s.id} className={`bt-session-card ${isProfitable ? "session-profit" : "session-loss"}`}>
+                            {/* Card Header */}
+                            <div className="bt-session-header">
+                              <div className="bt-session-title-row">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCompare.includes(s.id)}
+                                  onChange={() => toggleCompareSelect(s.id)}
+                                  className="bt-session-checkbox"
+                                />
+                                <div className="bt-session-title-group">
+                                  <h3 className="bt-session-name">{s.session_name}</h3>
+                                  {s.strategy_name && <span className="bt-session-strategy-badge">{s.strategy_name}</span>}
                                 </div>
-                                {s.description && <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem", margin: "0.2rem 0" }}>{s.description}</p>}
-                                <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "0.3rem" }}>
-                                  <span>{s.data_date_from} → {s.data_date_to}</span>
-                                  <span>•</span>
-                                  <span>{s.total_trades} trades</span>
-                                  <span>•</span>
-                                  <span style={{ color: parseFloat(s.net_pnl) >= 0 ? GREEN : RED, fontWeight: 600 }}>₹{parseFloat(s.net_pnl).toFixed(2)}</span>
-                                  <span>•</span>
-                                  <span>WR: {parseFloat(s.win_rate).toFixed(1)}%</span>
-                                  <span>•</span>
-                                  <span>PF: {parseFloat(s.profit_factor).toFixed(2)}</span>
-                                  <span>•</span>
-                                  <span>Sharpe: {parseFloat(s.sharpe_ratio).toFixed(2)}</span>
-                                </div>
-                                {s.tags && s.tags.length > 0 && (
-                                  <div style={{ display: "flex", gap: "0.3rem", marginTop: "0.4rem", flexWrap: "wrap" }}>
-                                    {s.tags.map((tag, ti) => (
-                                      <span key={ti} style={{ background: "rgba(0,137,123,0.12)", color: TEAL, fontSize: "0.72rem", padding: "0.15rem 0.5rem", borderRadius: "10px", fontWeight: 600 }}>{tag}</span>
-                                    ))}
-                                  </div>
-                                )}
+                                <span className="bt-session-date-range">
+                                  📅 {s.data_date_from} → {s.data_date_to}
+                                </span>
                               </div>
-                              <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
-                                <button
-                                  className="bt-save-btn"
-                                  style={{ fontSize: "0.78rem", padding: "0.3rem 0.6rem" }}
-                                  onClick={() => handleLoadSession(s.id, s.session_name)}
-                                >
-                                  ▶️ Load
+                              {s.description && <p className="bt-session-desc">{s.description}</p>}
+                            </div>
+
+                            {/* KPI Mini Grid */}
+                            <div className="bt-session-kpi-grid">
+                              <div className="bt-session-kpi">
+                                <span className="bt-session-kpi-label">Net P&L</span>
+                                <span className={`bt-session-kpi-value ${isProfitable ? "val-positive" : "val-negative"}`}>
+                                  {isProfitable ? "+" : ""}₹{pnl.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="bt-session-kpi">
+                                <span className="bt-session-kpi-label">Win Rate</span>
+                                <span className={`bt-session-kpi-value ${wr >= 50 ? "val-positive" : "val-negative"}`}>
+                                  {wr.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="bt-session-kpi">
+                                <span className="bt-session-kpi-label">Profit Factor</span>
+                                <span className={`bt-session-kpi-value ${pf >= 1.5 ? "val-positive" : pf >= 1 ? "val-neutral" : "val-negative"}`}>
+                                  {pf.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="bt-session-kpi">
+                                <span className="bt-session-kpi-label">Sharpe</span>
+                                <span className={`bt-session-kpi-value ${sharpe >= 1 ? "val-positive" : sharpe >= 0 ? "val-neutral" : "val-negative"}`}>
+                                  {sharpe.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="bt-session-kpi">
+                                <span className="bt-session-kpi-label">Max DD</span>
+                                <span className="bt-session-kpi-value val-negative">
+                                  ₹{dd.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="bt-session-kpi">
+                                <span className="bt-session-kpi-label">Expectancy</span>
+                                <span className={`bt-session-kpi-value ${exp >= 0 ? "val-positive" : "val-negative"}`}>
+                                  ₹{exp.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="bt-session-kpi">
+                                <span className="bt-session-kpi-label">Total Trades</span>
+                                <span className="bt-session-kpi-value">{s.total_trades}</span>
+                              </div>
+                              <div className="bt-session-kpi">
+                                <span className="bt-session-kpi-label">Risk/Reward</span>
+                                <span className={`bt-session-kpi-value ${parseFloat(s.risk_reward || 0) >= 1.5 ? "val-positive" : "val-neutral"}`}>
+                                  {parseFloat(s.risk_reward || 0).toFixed(2)}x
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Footer: Tags + Actions */}
+                            <div className="bt-session-footer">
+                              <div className="bt-session-tags-row">
+                                {s.tags && s.tags.length > 0 && s.tags.map((tag, ti) => (
+                                  <span key={ti} className="bt-session-tag">{tag}</span>
+                                ))}
+                              </div>
+                              <div className="bt-session-actions">
+                                <button className="bt-session-action-btn bt-action-load" onClick={() => handleLoadSession(s.id, s.session_name)}>
+                                  ▶ Load & Analyze
                                 </button>
-                                <button
-                                  className="bt-tab"
-                                  style={{ fontSize: "0.78rem", padding: "0.3rem 0.6rem" }}
-                                  onClick={() => { setEditingNotes(editingNotes === s.id ? null : s.id); setEditNotesText(s.notes || ""); }}
-                                >
+                                <button className="bt-session-action-btn bt-action-notes" onClick={() => { setEditingNotes(editingNotes === s.id ? null : s.id); setEditNotesText(s.notes || ""); }}>
                                   📝 Notes
                                 </button>
-                                <button
-                                  className="bt-clear-btn"
-                                  style={{ padding: "0.3rem 0.6rem", fontSize: "0.78rem" }}
-                                  onClick={() => handleDeleteSession(s.id, s.session_name)}
-                                >
+                                <button className="bt-session-action-btn bt-action-delete" onClick={() => handleDeleteSession(s.id, s.session_name)}>
                                   🗑️
                                 </button>
                               </div>
@@ -1135,18 +1175,15 @@ function BacktestingPage() {
 
                             {/* Notes Editor */}
                             {editingNotes === s.id && (
-                              <div style={{ marginTop: "0.8rem", borderTop: "1px solid var(--border)", paddingTop: "0.8rem" }}>
-                                <label style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>📝 Strategy Journal / Notes</label>
+                              <div className="bt-session-notes-editor">
+                                <label className="bt-session-notes-label">📝 Strategy Journal / Notes</label>
                                 <textarea
                                   value={editNotesText}
                                   onChange={e => setEditNotesText(e.target.value)}
                                   placeholder="Write your observations... e.g., 'Works well in trending markets, fails in consolidation'"
-                                  style={{
-                                    width: "100%", minHeight: "80px", background: "var(--bg-tertiary, #1a1a2e)", border: "1px solid var(--border)",
-                                    borderRadius: "8px", padding: "0.6rem", color: "var(--text-primary)", fontSize: "0.85rem", resize: "vertical",
-                                  }}
+                                  className="bt-session-notes-textarea"
                                 />
-                                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                                <div className="bt-session-notes-actions">
                                   <button className="bt-save-btn" style={{ fontSize: "0.8rem", padding: "0.3rem 0.8rem" }} onClick={() => handleSaveNotes(s.id)}>Save Notes</button>
                                   <button className="bt-clear-btn" style={{ fontSize: "0.8rem", padding: "0.3rem 0.6rem" }} onClick={() => setEditingNotes(null)}>Cancel</button>
                                 </div>
@@ -1155,12 +1192,13 @@ function BacktestingPage() {
 
                             {/* Show saved notes */}
                             {editingNotes !== s.id && s.notes && (
-                              <div style={{ marginTop: "0.6rem", background: "rgba(0,137,123,0.05)", borderRadius: "6px", padding: "0.6rem", fontSize: "0.82rem", color: "var(--text-secondary)", whiteSpace: "pre-wrap" }}>
+                              <div className="bt-session-saved-notes">
                                 📝 {s.notes}
                               </div>
                             )}
                           </div>
-                        ));
+                          );
+                        });
                       } catch (e) {
                         return <div style={{ color: "red", padding: "1rem" }}>Render Error: {e.message}</div>;
                       }
