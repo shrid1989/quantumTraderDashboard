@@ -149,3 +149,79 @@ class S3AutoSyncResponse(BaseModel):
 class ErrorResponse(BaseModel):
     detail: str = Field(..., description="Error message")
     status_code: int = Field(..., description="HTTP status code")
+
+
+# ─── Backtest Models ──────────────────────────────────────────────────────────
+
+class BacktestTradeCreate(BaseModel):
+    """Single trade from a backtest CSV"""
+    date: str
+    position: str
+    nifty_at_entry: float = 0
+    entry_reason: str = ""
+    entry_time: str = ""
+    entry_price: float = 0
+    exit_time: str = ""
+    exit_price: float = 0
+    exit_reason: str = ""
+    pnl_pts: float = 0
+    pnl_inr: float = 0
+    trade_duration: str = ""
+    pivot: Optional[float] = None
+    r1: Optional[float] = None
+    r2: Optional[float] = None
+    s1: Optional[float] = None
+    s2: Optional[float] = None
+
+
+class BacktestSessionCreate(BaseModel):
+    """Request body to save a backtest session"""
+    session_name: str = Field(..., min_length=1, max_length=200)
+    description: str = ""
+    notes: str = ""
+    strategy_name: str = ""
+    tags: List[str] = []
+    # Computed KPIs (sent from the frontend analytics engine)
+    data_date_from: str = ""
+    data_date_to: str = ""
+    total_trades: int = 0
+    net_pnl: float = 0
+    win_rate: float = 0
+    profit_factor: float = 0
+    max_drawdown: float = 0
+    sharpe_ratio: float = 0
+    expectancy: float = 0
+    risk_reward: float = 0
+    max_win_streak: int = 0
+    max_loss_streak: int = 0
+    # Trades
+    trades: List[BacktestTradeCreate] = []
+
+
+class BacktestSessionSummary(BaseModel):
+    """Session summary for list view (no trades)"""
+    id: str
+    session_name: str
+    description: str = ""
+    notes: str = ""
+    strategy_name: str = ""
+    data_date_from: Optional[str] = None
+    data_date_to: Optional[str] = None
+    total_trades: int = 0
+    net_pnl: float = 0
+    win_rate: float = 0
+    profit_factor: float = 0
+    max_drawdown: float = 0
+    sharpe_ratio: float = 0
+    expectancy: float = 0
+    risk_reward: float = 0
+    max_win_streak: int = 0
+    max_loss_streak: int = 0
+    tags: List[str] = []
+    created_at: Optional[str] = None
+
+
+class BacktestSessionDetail(BacktestSessionSummary):
+    """Full session with trades"""
+    trades: List[dict] = []
+

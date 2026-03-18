@@ -103,6 +103,13 @@ function Layout({ children, darkMode, toggleDarkMode }) {
             >
               📅 Day Wise
             </Link>
+            <Link
+              to="/backtesting"
+              className={`nav-item ${isActive("/backtesting") ? "active" : ""}`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              🧪 Backtesting
+            </Link>
           </nav>
         </aside>
 

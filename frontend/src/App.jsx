@@ -11,6 +11,7 @@ import StrategyPage from "./pages/Strategy";
 import UploadPage from "./pages/Upload";
 import SettingsPage from "./pages/Settings";
 import DayWisePage from "./pages/DayWise";
+import BacktestingPage from "./pages/Backtesting";
 
 // Components
 import Layout from "./components/Layout";
@@ -147,6 +148,20 @@ function App() {
                   toggleDarkMode={() => setDarkMode(!darkMode)}
                 >
                   <DayWisePage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/backtesting"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Layout
+                  darkMode={darkMode}
+                  toggleDarkMode={() => setDarkMode(!darkMode)}
+                >
+                  <BacktestingPage />
                 </Layout>
               </ProtectedRoute>
             }

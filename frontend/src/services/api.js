@@ -98,4 +98,20 @@ export const uploadAPI = {
     api.get('/api/s3/today'),
 };
 
+// Backtest APIs
+export const backtestAPI = {
+  saveSessions: (data) =>
+    api.post('/api/backtest/sessions', data),
+  listSessions: () =>
+    api.get('/api/backtest/sessions'),
+  getSession: (id) =>
+    api.get(`/api/backtest/sessions/${id}`),
+  deleteSession: (id) =>
+    api.delete(`/api/backtest/sessions/${id}`),
+  updateNotes: (id, data) =>
+    api.put(`/api/backtest/sessions/${id}/notes`, data),
+  compareSessions: (sessionIds) =>
+    api.post('/api/backtest/compare', { session_ids: sessionIds }),
+};
+
 export default api;
