@@ -1,23 +1,33 @@
 # QuantumTrader Dashboard
 
-Trading bot performance dashboard for monitoring NIFTY trading strategies in real-time.
+Personal NIFTY trading bot performance dashboard — monitor strategies, analyze trades, and backtest with professional-grade analytics.
 
 ```
-⚛️ React + FastAPI + DynamoDB + AWS
+⚛️ React + FastAPI + Supabase PostgreSQL
 ```
+
+**Cost: $0/month** (all free tiers)
 
 ---
 
 ## 🚀 Features
 
-- **Real-time Dashboard** - Monitor KPIs (PnL, win rate, profit factor, sharpe ratio)
-- **Trade History** - View all trades with advanced filtering by date, strategy, position type
-- **Strategy Analytics** - Compare performance across reversal and straddle strategies
-- **Automatic S3 Sync** - Lambda-triggered sync when CSV uploaded by trading bot
-- **Manual CSV Upload** - Import historical trades manually
-- **Dark Mode** - Beautiful dark-themed UI out of the box
-- **JWT Authentication** - Single-user authentication with JWT tokens
-- **Responsive Design** - Works on desktop and mobile
+- **Real-time Dashboard** — KPIs (P&L, win rate, profit factor), equity curve, monthly breakdown
+- **Trade History** — View all trades with filtering by date, strategy, position type
+- **Strategy Analytics** — Compare performance across strategies with Sharpe ratio
+- **Day Wise Analysis** — Day-by-day trade breakdown
+- **🧪 Backtesting Analytics** — Upload backtest CSVs for pro-level analysis:
+  - Drawdown curve, Sharpe ratio, expectancy, risk-reward ratio
+  - Hour-of-day & day-of-week analysis (intraday-specific)
+  - Trade duration vs P&L scatter plot
+  - P&L distribution histogram
+  - Strategy comparison with overlaid equity curves
+  - Sortable/filterable trade log
+- **CSV Upload** — Import trades manually
+- **S3 → Lambda → Supabase** — Automatic sync when trading bot uploads CSV
+- **Dark/Light Mode** — Toggle theme
+- **JWT Authentication** — Single-user auth
+- **Responsive** — Works on desktop and mobile
 
 ---
 
@@ -25,46 +35,57 @@ Trading bot performance dashboard for monitoring NIFTY trading strategies in rea
 
 ### Prerequisites
 
-- Docker & Docker Compose
 - Python 3.11+
 - Node.js 18+
-- Git
+- Supabase account (free at [supabase.com](https://supabase.com))
 
-### 1. Clone & Setup
+### 1. Create Supabase Project
 
-```bash
-cd QuantumTraderDashboard
+1. Go to **supabase.com** → Create account → New project
+2. Go to **SQL Editor** → Paste and run [`supabase/migrations/001_create_trades.sql`](supabase/migrations/001_create_trades.sql)
 
-# Create backend env
-cp backend/.env.local backend/.env
-
-# Create frontend env
-cp frontend/.env.local frontend/.env
-```
-
-### 2. Start with Docker Compose
+### 2. Configure Environment
 
 ```bash
-docker-compose up -d
+# Copy and fill in your Supabase credentials
+cp backend/.env.example backend/.env
 ```
 
-**Services:**
+Edit `backend/.env`:
+```
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_KEY=eyJxxxxx...
+IS_LOCAL=true
+JWT_SECRET=change-this-in-production
+USER_EMAIL=trader@quantumtrader.com
+USER_PASSWORD=your-secure-password
+S3_BUCKET=shri-trading-logs
+```
 
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:8000`
-- DynamoDB Local: `http://localhost:8001`
-- API Docs: `http://localhost:8000/api/docs`
-
-### 3. Login
-
-**Email:** `trader@quantumtrader.com`
-**Password:** `admin@123`
-
-### 4. Stop Services
+### 3. Run Backend
 
 ```bash
-docker-compose down
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
+
+Visit http://localhost:8000/health → `{"status":"healthy","database":"connected"}`
+
+### 4. Run Frontend
+
+```bash
+cd frontend
+npm install   # first time only
+npm start
+```
+
+Visit http://localhost:3000
+
+### 5. Login
+
+- **Email:** `trader@quantumtrader.com`
+- **Password:** (set in `backend/.env` as `USER_PASSWORD`)
 
 ---
 
@@ -72,18 +93,17 @@ docker-compose down
 
 ```
 ┌─────────────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  React Frontend         │────►│  FastAPI Backend │────►│  DynamoDB        │
-│  (Dark Mode, SPA)       │     │  (Python)        │     │  (NoSQL DB)      │
+│  React Frontend         │────►│  FastAPI Backend  │────►│  Supabase        │
+│  (Vercel, $0)           │     │  (Render, $0)     │     │  PostgreSQL ($0) │
 └─────────────────────────┘     └──────────────────┘     └──────────────────┘
-      (S3 + CloudFront)         (ECS Fargate)                    (AWS)
-          ▲                             │                         ▲
-          │                             │                         │
-          │                 ┌─CS V Upload endpoint                │
-          │                 │  (manual or Lambda)                 │
-          │                 │                                     │
-          └─────────────────┴─────────────────────────────────────┘
-                  (Local/S3 Bucket)
+                                                                   ▲
+                         ┌──────────────┐                          │
+                         │  S3 + Lambda │──── direct write ────────┘
+                         │  (CSV sync)  │
+                         └──────────────┘
 ```
+
+**Backtesting** is fully client-side — no backend calls, no DB writes. Upload CSV → analyze in-browser → discard.
 
 ---
 
@@ -91,154 +111,127 @@ docker-compose down
 
 ```
 QuantumTraderDashboard/
-├── backend/                      # FastAPI application
+├── backend/
 │   ├── app/
-│   │   ├── api/routes/          # API endpoints
-│   │   ├── services/            # Business logic
-│   │   ├── utils/               # Utilities
-│   │   ├── main.py              # FastAPI app
-│   │   ├── database.py          # DynamoDB setup
-│   │   ├── config.py            # Configuration
-│   │   └── models.py            # Pydantic schemas
-│   ├── lambda/                  # AWS Lambda function
+│   │   ├── api/routes/           # auth, dashboard, strategy, trades, upload
+│   │   ├── services/             # csv_parser, metrics_service, trade_service
+│   │   ├── utils/                # exceptions, logger
+│   │   ├── main.py               # FastAPI app entry
+│   │   ├── database.py           # Supabase client
+│   │   ├── config.py             # Environment config
+│   │   └── models.py             # Pydantic schemas
+│   ├── lambda/
+│   │   ├── s3_trigger_lambda.py  # S3 → Supabase direct write
+│   │   └── requirements.txt
+│   ├── .env                      # Supabase credentials (not committed)
+│   ├── .env.example              # Safe template
 │   ├── requirements.txt
-│   ├── Dockerfile
-│   └── .env.local
+│   └── Dockerfile
 │
-├── frontend/                     # React SPA
+├── frontend/
 │   ├── src/
-│   │   ├── pages/               # Dashboard, Trades, Strategy, Upload, Settings
-│   │   ├── components/          # Layout, Header, Sidebar, KPICard, etc.
-│   │   ├── hooks/               # useAuth, useTrades, useDashboard
-│   │   ├── services/            # Axios API client
-│   │   ├── styles/              # CSS (dark mode)
-│   │   ├── App.jsx              # Main routing
-│   │   └── index.js             # Entry point
+│   │   ├── pages/                # Dashboard, Trades, Strategy, Upload,
+│   │   │                         #   Settings, DayWise, Backtesting
+│   │   ├── components/           # Layout
+│   │   ├── hooks/                # useAuth
+│   │   ├── services/
+│   │   │   ├── api.js            # Axios API client
+│   │   │   └── backtestAnalytics.js  # Client-side analytics engine
+│   │   ├── styles/               # CSS (dark mode + backtesting)
+│   │   ├── App.jsx               # Main routing
+│   │   └── index.js
 │   ├── package.json
-│   ├── Dockerfile
-│   ├── .env.local
-│   └── public/
+│   └── Dockerfile
 │
-├── docker-compose.yml           # Local dev setup
-├── README.md                     # This file
-└── .gitignore
+├── supabase/
+│   └── migrations/
+│       └── 001_create_trades.sql # PostgreSQL schema
+│
+├── docker-compose.yml
+└── README.md
 ```
 
 ---
 
 ## 🔌 API Endpoints
 
-### Authentication
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/auth/login` | POST | Login (returns JWT) |
+| `/api/auth/logout` | POST | Logout |
+| `/api/auth/verify` | GET | Verify token |
+| `/api/trades` | GET | List all trades (paginated) |
+| `/api/trades/date/{date}` | GET | Trades by date |
+| `/api/trades/strategy/{strategy}` | GET | Trades by strategy |
+| `/api/trades/filter` | POST | Advanced filtering |
+| `/api/dashboard/kpis` | GET | KPI metrics |
+| `/api/dashboard/chart-data` | GET | Equity curve data |
+| `/api/dashboard/monthly-pnl` | GET | Monthly breakdown |
+| `/api/strategy` | GET | List strategies |
+| `/api/strategy/{strategy}/performance` | GET | Strategy metrics |
+| `/api/strategy/all/performance` | GET | All strategies |
+| `/api/upload/csv` | POST | Upload CSV file |
+| `/health` | GET | Health check |
 
-- `POST /api/auth/login` - Login (email + password)
-- `POST /api/auth/logout` - Logout
-- `GET /api/auth/verify` - Verify token
-
-### Trades
-
-- `GET /api/trades` - List all trades (paginated)
-- `GET /api/trades/date/{date}` - Trades by specific date
-- `GET /api/trades/strategy/{strategy}` - Trades by strategy
-- `POST /api/trades/filter` - Advanced filtering
-- `POST /api/trades` - Create new trade
-- `DELETE /api/trades/{trade_id}` - Delete trade
-
-### Dashboard
-
-- `GET /api/dashboard/kpis` - KPI metrics
-- `GET /api/dashboard/chart-data` - Equity curve data
-- `GET /api/dashboard/monthly-pnl` - Monthly breakdown
-- `GET /api/dashboard/summary` - Dashboard summary
-
-### Strategy
-
-- `GET /api/strategy` - List strategies
-- `GET /api/strategy/{strategy}/performance` - Strategy metrics
-- `GET /api/strategy/all/performance` - All strategies
-- `GET /api/strategy/comparison` - Side-by-side comparison
-
-### Upload & Sync
-
-- `POST /api/upload/csv` - Upload CSV file
-- `POST /api/s3/auto-sync` - S3 auto-sync (Lambda trigger)
-- `GET /api/s3/today` - Fetch today's trades from S3
+> **Note:** Backtesting has no API endpoints — it's fully processed in the browser.
 
 ---
 
 ## 📦 CSV Format
 
-**Expected CSV columns** (`trades_YYYY-MM-DD.csv`):
+**Required columns** (`trades_YYYY-MM-DD.csv`):
 
 ```csv
-date,nifty_value,strategy,entry_reason,option_strike,sold_option,position_type,entry_time,entry_premium,exit_time,exit_premium,exit_reason,quantity,pnl[,ce_symbol,pe_symbol,straddle_vwap]
+date,nifty_value,strategy,entry_reason,option_strike,sold_option,position_type,entry_time,entry_premium,exit_time,exit_premium,exit_reason,quantity,pnl
 ```
+
+**Optional columns:** `ce_symbol`, `pe_symbol`, `straddle_vwap`, `pivot`, `s1`, `s2`, `r1`, `r2`
 
 **Example:**
+```csv
+2026-03-01,22350.0,reversal_pivot_supertrend,ST_FLIP_BULLISH,22350,NIFTY06MAR2622350PE,short_put,09:45:00,75.0,12:00:00,38.0,target_hit,1,37.0
+```
+
+Same format works for **paper trading uploads**. Backtesting uses a different format (see below).
+
+### Backtesting CSV Format
 
 ```csv
-2026-03-10,22550.0,reversal_pivot_supertrend,ST_FLIP_BULLISH,22550,NIFTY17MAR2622550PE,short_put,10:15:00,85.5,13:45:00,45.0,pivot_support_broken,1,40.5
+date,position,nifty_at_entry,entry_reason,entry_time,entry_price,exit_time,exit_price,exit_reason,pnl_pts,pnl_inr,trade_duration,pivot,r1,r2,s1,s2
 ```
+
+> **Note:** Tab-separated (TSV) files are also supported for backtesting.
 
 ---
 
-## 🚀 Production Deployment (AWS)
+## 🚀 Production Deployment
 
-### Prerequisites
+| Service | What | Cost |
+|---|---|---|
+| **Vercel** | Frontend (React) | $0 |
+| **Render** | Backend (FastAPI) | $0 (sleeps after 15 min) |
+| **Supabase** | Database (PostgreSQL) | $0 |
+| **S3 + Lambda** | CSV auto-sync | ~$0 |
 
-- AWS account with programmatic access
-- AWS CLI configured
-- S3 bucket `shri-trading-logs` created
+### Deploy Frontend (Vercel)
 
-### Step 1: Build Docker Images
+1. Go to **vercel.com** → Import GitHub repo
+2. Set **Root Directory**: `frontend`
+3. Add env var: `REACT_APP_API_URL = https://your-backend.onrender.com`
+4. Deploy
 
-```bash
-# Backend
-docker build -t quantumtrader-backend:latest ./backend
-docker tag quantumtrader-backend:latest YOUR_AWS_ACCOUNT.dkr.ecr.ap-south-1.amazonaws.com/quantumtrader-backend:latest
-docker push YOUR_AWS_ACCOUNT.dkr.ecr.ap-south-1.amazonaws.com/quantumtrader-backend:latest
+### Deploy Backend (Render)
 
-# Frontend
-docker build -t quantumtrader-frontend:latest ./frontend
-docker tag quantumtrader-frontend:latest YOUR_AWS_ACCOUNT.dkr.ecr.ap-south-1.amazonaws.com/quantumtrader-frontend:latest
-docker push YOUR_AWS_ACCOUNT.dkr.ecr.ap-south-1.amazonaws.com/quantumtrader-frontend:latest
-```
+1. Go to **render.com** → New Web Service → Connect repo
+2. Settings:
+   - **Root Directory:** `backend`
+   - **Build:** `pip install -r requirements.txt`
+   - **Start:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+3. Add environment variables: `SUPABASE_URL`, `SUPABASE_KEY`, `JWT_SECRET`, `FRONTEND_URL`, `USER_EMAIL`, `USER_PASSWORD`
 
-### Step 2: Deploy CloudFormation Stack
+### Lambda (Optional)
 
-```bash
-aws cloudformation create-stack \
-  --stack-name quantumtrader-dashboard \
-  --template-body file://infra/cloudformation/dashboard-dynamodb.yaml \
-  --parameters ParameterKey=EnvironmentName,ParameterValue=production \
-  --region ap-south-1
-```
-
-### Step 3: Deploy Lambda Function
-
-```bash
-# Package Lambda function
-cd backend/lambda
-zip -r ../lambda_function.zip .
-
-# Upload to Lambda
-aws lambda create-function \
-  --function-name quantumtrader-s3-sync \
-  --runtime python3.11 \
-  --role arn:aws:iam::YOUR_ACCOUNT_ID:role/lambda-execution-role \
-  --handler s3_trigger_lambda.lambda_handler \
-  --zip-file fileb://../lambda_function.zip \
-  --environment Variables={DASHBOARD_API_URL=https://api.quantumtrader.com,DASHBOARD_API_KEY=YOUR_API_KEY} \
-  --region ap-south-1
-```
-
-### Step 4: Configure S3 Event Notification
-
-```bash
-aws s3api put-bucket-notification-configuration \
-  --bucket shri-trading-logs \
-  --notification-configuration file://s3-lambda-trigger.json \
-  --region ap-south-1
-```
+Set `SUPABASE_URL` and `SUPABASE_KEY` as Lambda environment variables. Upload `backend/lambda/s3_trigger_lambda.py` as deployment package.
 
 ---
 
@@ -247,139 +240,66 @@ aws s3api put-bucket-notification-configuration \
 ### Backend (.env)
 
 ```
-IS_LOCAL=false
-DEBUG=false
-DYNAMODB_TABLE=QuantumTrader-Trades
-AWS_DEFAULT_REGION=ap-south-1
-JWT_SECRET=your-super-secret-key
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_KEY=your-service-role-key
+IS_LOCAL=true
+JWT_SECRET=change-this-in-production
 USER_EMAIL=trader@quantumtrader.com
-USER_PASSWORD=secure-password
+USER_PASSWORD=your-secure-password
 S3_BUCKET=shri-trading-logs
 ```
 
 ### Frontend (.env)
 
 ```
-REACT_APP_API_URL=https://api.quantumtrader.com
+REACT_APP_API_URL=http://localhost:8000
 ```
+
+> **Never commit `.env`** — it's in `.gitignore`. Use `.env.example` as template.
 
 ---
 
-## 📈 Architecture Decisions
+## 🧪 Backtesting Analytics
 
-### Why DynamoDB?
+The Backtesting tab provides professional-grade strategy analysis:
 
-- **Cost**: Pay-per-request pricing (free tier covers usage for personal use)
-- **Scalability**: Auto-scales to handle traffic spikes
-- **Simplicity**: No database management overhead
-- **Perfect for**: Low-volume, periodic data access
+| Metric | Description |
+|---|---|
+| Net P&L | Total profit/loss across all trades |
+| Win Rate | % of profitable trades |
+| Profit Factor | Gross profit / Gross loss |
+| Expectancy | Expected ₹ per trade (Win% × AvgWin − Loss% × AvgLoss) |
+| Max Drawdown | Largest peak-to-trough decline |
+| Sharpe Ratio | Risk-adjusted return (annualized, 252 days) |
+| Risk-Reward | Average win / Average loss |
+| Streaks | Max consecutive wins/losses |
 
-### Why Fastapi + React?
+**Charts:** Equity curve, drawdown (underwater), daily P&L bars, P&L distribution histogram, monthly breakdown
 
-- **Performance**: Fast async processing
-- **Modern Stack**: TypeScript + async/await
-- **Real-time**: WebSockets support (future)
-- **Testing**: Excellent testing frameworks
-- **Deployment**: Easy containerization with Docker
+**Time Analysis:** P&L by entry hour, P&L by day-of-week, trade duration vs P&L scatter
 
-### Why Lambda Auto-Sync?
-
-- **Event-driven**: Triggers automatically when CSV uploaded
-- **Serverless**: No infrastructure to manage
-- **Reliable**: Automatic retries and error handling
-- **Cost-effective**: Pay only for execution time
-
----
-
-## 🧪 Testing
-
-### Backend Tests
-
-```bash
-cd backend
-python -m pytest tests/
-```
-
-### Frontend Tests
-
-```bash
-cd frontend
-npm test
-```
-
-### Integration Testing
-
-```bash
-# Local smoke tests after starting docker-compose
-npm run test:e2e
-```
-
----
-
-## 📊 KPIs Displayed
-
-- **Total PnL** - Sum of all trade profits/losses
-- **Win Rate** - Percentage of profitable trades
-- **Profit Factor** - Ratio of total wins to total losses
-- **Sharpe Ratio** - Risk-adjusted return
-- **Average Win/Loss** - Mean profit/loss per trade
-- **Largest Win/Loss** - Max single-trade win/loss
-- **Equity Curve** - Cumulative PnL over time
-
----
-
-## 🔗 Trading Bot Integration
-
-### How S3 Sync Works
-
-```
-1. Trading Bot (ECS) runs daily 09:30-15:30
-2. At end of day, uploads trades_YYYY-MM-DD.csv to S3
-3. S3 triggers Lambda event
-4. Lambda calls dashboard `/api/s3/auto-sync` endpoint
-5. Dashboard fetches CSV from S3
-6. Parses trades and upserts to DynamoDB
-7. Frontend auto-refreshes to show new trades
-```
-
-### CSV Upload Requirements
-
-- File format: `trades_YYYY-MM-DD.csv`
-- Location: `s3://shri-trading-logs/paper-trading/{year}/{month}/{filename}`
-- Columns: Must include all 14 required columns
-- Delimiter: Comma (,)
+**Strategy Comparison:** Side-by-side table + overlaid equity curves when CSV has multiple strategies
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Issue: "Connection refused" when starting
+### Backend won't start
+- Check `.env` has valid `SUPABASE_URL` and `SUPABASE_KEY`
+- Test: `python3 -c "from app.database import get_db_client; print('OK')"`
 
-**Solution:**
+### Can't upload CSV
+- Check `trades` table exists in Supabase (run the migration SQL)
+- Verify CSV headers match expected columns
 
-```bash
-docker-compose down
-docker-compose up -d --build
-```
+### Frontend shows "Network Error"
+- Check `REACT_APP_API_URL` is set correctly
+- Verify backend: `curl http://localhost:8000/health`
+- Check browser console (F12) for CORS errors
 
-### Issue: DynamoDB table not found
-
-**Solution:**
-The table is created automatically on first backend startup. Wait 30 seconds and refresh.
-
-### Issue: CSV upload fails
-
-**Solution:**
-Check CSV format matches expected schema. Run validation:
-
-```bash
-python -c "from app.services.csv_parser import CSVParserService; print(CSVParserService.EXPECTED_COLUMNS)"
-```
-
-### Issue: CORS errors in frontend
-
-**Solution:**
-Ensure `REACT_APP_API_URL` environment variable matches backend URL.
+### Render backend keeps sleeping
+- Use [UptimeRobot](https://uptimerobot.com) (free) to ping `/health` every 5 min
+- Or upgrade to Render paid ($7/month) for always-on
 
 ---
 
@@ -389,14 +309,6 @@ Proprietary. Use for authorized trading analysis only.
 
 ---
 
-## 📞 Support
-
-Contact: [Your Email]
-
----
-
-**Last Updated:** March 10, 2026
-**Version:** 1.0.0
-**Status:** Production Ready ✅
-
-added for testing
+**Last Updated:** March 17, 2026
+**Version:** 2.0.0
+**Status:** Production Ready ✅ | Backtesting Analytics ✅
