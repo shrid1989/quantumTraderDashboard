@@ -505,106 +505,54 @@ function TradesPage() {
                       <td colSpan="13">
                         <div className="expanded-detail-content">
                           <div className="detail-grid">
-                            {trade.option_strike && (
-                              <div className="detail-item">
-                                <span className="detail-label">
-                                  Option Strike
-                                </span>
-                                <span className="detail-value">
-                                  {trade.option_strike}
-                                </span>
-                              </div>
-                            )}
-                            {trade.ce_symbol && (
-                              <div className="detail-item">
-                                <span className="detail-label">CE Symbol</span>
-                                <span className="detail-value">
-                                  {trade.ce_symbol}
-                                </span>
-                              </div>
-                            )}
-                            {trade.pe_symbol && (
-                              <div className="detail-item">
-                                <span className="detail-label">PE Symbol</span>
-                                <span className="detail-value">
-                                  {trade.pe_symbol}
-                                </span>
-                              </div>
-                            )}
-                            {trade.position_type && (
-                              <div className="detail-item">
-                                <span className="detail-label">
-                                  Position Type
-                                </span>
-                                <span className="detail-value">
-                                  {trade.position_type.replace(/_/g, " ")}
-                                </span>
-                              </div>
-                            )}
-                            {trade.straddle_vwap && (
-                              <div className="detail-item">
-                                <span className="detail-label">
-                                  Straddle VWAP
-                                </span>
-                                <span className="detail-value">
-                                  ₹{Number(trade.straddle_vwap).toFixed(2)}
-                                </span>
-                              </div>
-                            )}
-                            {trade.pivot && (
-                              <div className="detail-item">
-                                <span className="detail-label">Pivot</span>
-                                <span className="detail-value">
-                                  {trade.pivot}
-                                </span>
-                              </div>
-                            )}
-                            {trade.s1 && (
-                              <div className="detail-item">
-                                <span className="detail-label">S1</span>
-                                <span className="detail-value">{trade.s1}</span>
-                              </div>
-                            )}
-                            {trade.s2 && (
-                              <div className="detail-item">
-                                <span className="detail-label">S2</span>
-                                <span className="detail-value">{trade.s2}</span>
-                              </div>
-                            )}
-                            {trade.r1 && (
-                              <div className="detail-item">
-                                <span className="detail-label">R1</span>
-                                <span className="detail-value">{trade.r1}</span>
-                              </div>
-                            )}
-                            {trade.r2 && (
-                              <div className="detail-item">
-                                <span className="detail-label">R2</span>
-                                <span className="detail-value">{trade.r2}</span>
-                              </div>
-                            )}
-                            <div className="detail-item">
-                              <span className="detail-label">Entry Reason</span>
-                              <span className="detail-value">
-                                {trade.entry_reason}
-                              </span>
-                            </div>
-                            <div className="detail-item">
-                              <span className="detail-label">Exit Reason</span>
-                              <span className="detail-value">
-                                {trade.exit_reason}
-                              </span>
-                            </div>
-                            {trade.sold_option && (
-                              <div className="detail-item">
-                                <span className="detail-label">
-                                  Sold Option
-                                </span>
-                                <span className="detail-value">
-                                  {trade.sold_option}
-                                </span>
-                              </div>
-                            )}
+                            {/* Base Trade Info */}
+                            <div className="detail-item"><span className="detail-label">Date</span><span className="detail-value">{trade.date}</span></div>
+                            <div className="detail-item"><span className="detail-label">Strategy</span><span className="detail-value">{trade.strategy}</span></div>
+                            <div className="detail-item"><span className="detail-label">Position Type</span><span className="detail-value">{trade.position_type ? trade.position_type.replace(/_/g, " ") : "—"}</span></div>
+                            <div className="detail-item"><span className="detail-label">Quantity</span><span className="detail-value">{trade.quantity || 1}</span></div>
+
+                            <div className="detail-item"><span className="detail-label">Time (Entry → Exit)</span><span className="detail-value">{trade.entry_time || "—"} → {trade.exit_time || "—"}</span></div>
+                            <div className="detail-item"><span className="detail-label">Premium (Entry → Exit)</span><span className="detail-value">₹{Number(trade.entry_premium || 0).toFixed(2)} → ₹{Number(trade.exit_premium || 0).toFixed(2)}</span></div>
+
+                            <div className="detail-item"><span className="detail-label">Entry Reason</span><span className="detail-value">{trade.entry_reason || "—"}</span></div>
+                            <div className="detail-item"><span className="detail-label">Exit Reason</span><span className="detail-value">{trade.exit_reason || "—"}</span></div>
+
+                            <div className="detail-item"><span className="detail-label">NIFTY at Entry</span><span className="detail-value">{trade.nifty_value}</span></div>
+                            <div className="detail-item"><span className="detail-label">Total P&L</span><span className="detail-value" style={{ color: trade.pnl > 0 ? "var(--accent-green)" : trade.pnl < 0 ? "var(--accent-red)" : "inherit" }}>₹{Number(trade.pnl || 0).toFixed(2)}</span></div>
+
+                            {/* Option Details */}
+                            {trade.sold_option && <div className="detail-item"><span className="detail-label">Sold Option</span><span className="detail-value">{trade.sold_option}</span></div>}
+                            {trade.option_strike && <div className="detail-item"><span className="detail-label">Option Strike</span><span className="detail-value">{trade.option_strike}</span></div>}
+                            {trade.ce_symbol && <div className="detail-item"><span className="detail-label">CE Symbol</span><span className="detail-value">{trade.ce_symbol}</span></div>}
+                            {trade.pe_symbol && <div className="detail-item"><span className="detail-label">PE Symbol</span><span className="detail-value">{trade.pe_symbol}</span></div>}
+                            {trade.straddle_vwap && <div className="detail-item"><span className="detail-label">Straddle VWAP</span><span className="detail-value">₹{Number(trade.straddle_vwap).toFixed(2)}</span></div>}
+
+                            {/* Pivot/Backtest Details */}
+                            {trade.pivot && <div className="detail-item"><span className="detail-label">Pivot</span><span className="detail-value">{trade.pivot}</span></div>}
+                            {trade.s1 && <div className="detail-item"><span className="detail-label">S1</span><span className="detail-value">{trade.s1}</span></div>}
+                            {trade.s2 && <div className="detail-item"><span className="detail-label">S2</span><span className="detail-value">{trade.s2}</span></div>}
+                            {trade.r1 && <div className="detail-item"><span className="detail-label">R1</span><span className="detail-value">{trade.r1}</span></div>}
+                            {trade.r2 && <div className="detail-item"><span className="detail-label">R2</span><span className="detail-value">{trade.r2}</span></div>}
+                            {trade.pnl_pts !== undefined && trade.pnl_pts !== null && <div className="detail-item"><span className="detail-label">P&L (Points)</span><span className="detail-value">{trade.pnl_pts}</span></div>}
+                            {trade.trade_duration && <div className="detail-item"><span className="detail-label">Duration</span><span className="detail-value">{trade.trade_duration}</span></div>}
+
+                            {/* Catch-all for any other custom fields */}
+                            {Object.entries(trade).map(([key, value]) => {
+                              const handledKeys = [
+                                "date", "strategy", "position_type", "quantity", 
+                                "entry_time", "exit_time", "entry_premium", "exit_premium",
+                                "entry_reason", "exit_reason", "nifty_value", "pnl",
+                                "sold_option", "option_strike", "ce_symbol", "pe_symbol", "straddle_vwap",
+                                "pivot", "s1", "s2", "r1", "r2", "pnl_pts", "trade_duration", "trade_id", "timestamp", "id", "nifty_at_entry", "pnl_inr"
+                              ];
+                              if (handledKeys.includes(key) || value === null || value === undefined || value === "") return null;
+                              return (
+                                <div className="detail-item" key={key}>
+                                  <span className="detail-label">{key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</span>
+                                  <span className="detail-value">{String(value)}</span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       </td>

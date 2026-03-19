@@ -35,7 +35,13 @@ class TradeBase(BaseModel):
     ce_symbol: Optional[str] = Field(None, description="CE option symbol (for straddles)")
     pe_symbol: Optional[str] = Field(None, description="PE option symbol (for straddles)")
     straddle_vwap: Optional[float] = Field(None, description="Straddle VWAP (for straddles)")
-
+    pivot: Optional[float] = Field(None, description="Pivot level")
+    s1: Optional[float] = Field(None, description="Support 1")
+    s2: Optional[float] = Field(None, description="Support 2")
+    r1: Optional[float] = Field(None, description="Resistance 1")
+    r2: Optional[float] = Field(None, description="Resistance 2")
+    pnl_pts: Optional[float] = Field(None, description="PnL in points")
+    trade_duration: Optional[str] = Field(None, description="Trade duration")
 
 class TradeCreate(TradeBase):
     """Model for creating a trade"""

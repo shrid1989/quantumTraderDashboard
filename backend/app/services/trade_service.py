@@ -56,6 +56,13 @@ class TradeService:
                 "ce_symbol": trade.ce_symbol or "",
                 "pe_symbol": trade.pe_symbol or "",
                 "straddle_vwap": trade.straddle_vwap or 0,
+                "pivot": trade.pivot,
+                "s1": trade.s1,
+                "s2": trade.s2,
+                "r1": trade.r1,
+                "r2": trade.r2,
+                "pnl_pts": trade.pnl_pts,
+                "trade_duration": trade.trade_duration,
             }
 
             # Insert item into Supabase
