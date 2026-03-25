@@ -114,4 +114,22 @@ export const backtestAPI = {
     api.post('/api/backtest/compare', { session_ids: sessionIds }),
 };
 
+// Scheduler APIs (Strategy On/Off Management)
+export const schedulerAPI = {
+  getSchedules: () =>
+    api.get('/api/scheduler/schedules'),
+  bulkUpdateSchedules: (schedules) =>
+    api.put('/api/scheduler/schedules', { schedules }),
+  getOverrides: () =>
+    api.get('/api/scheduler/overrides'),
+  createOverride: (override) =>
+    api.post('/api/scheduler/overrides', override),
+  deleteOverride: (id) =>
+    api.delete(`/api/scheduler/overrides/${id}`),
+  getTodayActive: () =>
+    api.get('/api/scheduler/today-active'),
+  getKnownStrategies: () =>
+    api.get('/api/scheduler/strategies'),
+};
+
 export default api;

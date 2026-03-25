@@ -12,6 +12,7 @@ import UploadPage from "./pages/Upload";
 import SettingsPage from "./pages/Settings";
 import DayWisePage from "./pages/DayWise";
 import BacktestingPage from "./pages/Backtesting";
+import StrategySchedulerPage from "./pages/StrategyScheduler";
 
 // Components
 import Layout from "./components/Layout";
@@ -134,6 +135,20 @@ function App() {
                   toggleDarkMode={() => setDarkMode(!darkMode)}
                 >
                   <SettingsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/scheduler"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Layout
+                  darkMode={darkMode}
+                  toggleDarkMode={() => setDarkMode(!darkMode)}
+                >
+                  <StrategySchedulerPage />
                 </Layout>
               </ProtectedRoute>
             }

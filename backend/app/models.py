@@ -231,3 +231,49 @@ class BacktestSessionDetail(BacktestSessionSummary):
     """Full session with trades"""
     trades: List[dict] = []
 
+
+# ─── Strategy Scheduler Models ────────────────────────────────────────────────
+
+class StrategySchedule(BaseModel):
+    """1 row per strategy with active_days array"""
+    id: Optional[str] = None
+    strategy_name: str = Field(..., description="Strategy identifier")
+    active_days: List[int] = Field(default=[0, 1, 2, 3, 4], description="Active day numbers: 0=Mon..4=Fri")
+    updated_at: Optional[str] = None
+
+
+class ScheduleUpdate(BaseModel):
+    """Update a single strategy's active days"""
+    strategy_name: str
+    active_days: List[int] = Field(..., description="Array of active day numbers")
+
+
+class ScheduleBulkUpdate(BaseModel):
+    """Bulk update all strategies"""
+    schedules: List[ScheduleUpdate]
+
+
+class ScheduleOverrideCreate(BaseModel):
+    """Create a date-specific override"""
+    strategy_name: str
+    specific_date: str = Field(..., description="YYYY-MM-DD")
+    is_active: bool = Field(False, description="True=force-enable, False=force-disable")
+
+
+class ScheduleOverride(BaseModel):
+    """A date-specific override entry"""
+    id: Optional[str] = None
+    strategy_name: str
+    specific_date: str
+    is_active: bool
+    updated_at: Optional[str] = None
+
+
+class TodayActiveResponse(BaseModel):
+    """Response for today's active strategies"""
+    date: str
+    day_of_week: int
+    day_name: str
+    active_strategies: List[str]
+
+
