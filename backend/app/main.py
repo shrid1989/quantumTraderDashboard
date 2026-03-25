@@ -109,7 +109,7 @@ async def shutdown_event():
 
 
 # Import and include routers
-from app.api.routes import auth, trades, dashboard, strategy, upload, backtest
+from app.api.routes import auth, trades, dashboard, strategy, upload, backtest, scheduler
 
 # Register routers
 app.include_router(auth.router)
@@ -118,6 +118,7 @@ app.include_router(dashboard.router)
 app.include_router(strategy.router)
 app.include_router(upload.router)
 app.include_router(backtest.router)
+app.include_router(scheduler.router)
 
 
 if __name__ == "__main__":

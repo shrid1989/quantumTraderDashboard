@@ -97,6 +97,13 @@ function Layout({ children, darkMode, toggleDarkMode }) {
               ⚙️ Settings
             </Link>
             <Link
+              to="/scheduler"
+              className={`nav-item ${isActive("/scheduler") ? "active" : ""}`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              🗓️ Strategy Scheduler
+            </Link>
+            <Link
               to="/daywise"
               className={`nav-item ${isActive("/daywise") ? "active" : ""}`}
               onClick={() => setSidebarOpen(false)}
