@@ -1,6 +1,6 @@
 // Dashboard Page with enhanced metrics and interactivity
 import React, { useState, useEffect } from "react";
-import { dashboardAPI, tradesAPI } from "../services/api";
+import { tradesAPI } from "../services/api";
 import toast from "react-hot-toast";
 import {
   LineChart,
@@ -389,9 +389,9 @@ function DashboardPage() {
                   <div className="metric-mini-label">
                     {filteredKPIs.total_trades - winningTrades > 0
                       ? (
-                          avgLossSize *
-                          (filteredKPIs.total_trades - winningTrades)
-                        ).toFixed(0)
+                        avgLossSize *
+                        (filteredKPIs.total_trades - winningTrades)
+                      ).toFixed(0)
                       : 0}{" "}
                     total
                   </div>
@@ -540,9 +540,9 @@ function DashboardPage() {
                             <span className="stat">
                               {strategy.total > 0
                                 ? (
-                                    (strategy.wins / strategy.total) *
-                                    100
-                                  ).toFixed(1)
+                                  (strategy.wins / strategy.total) *
+                                  100
+                                ).toFixed(1)
                                 : 0}
                               %
                             </span>
@@ -566,13 +566,12 @@ function DashboardPage() {
                     {filteredTrades.slice(0, 20).map((trade, idx) => (
                       <div
                         key={idx}
-                        className={`trade-card-enhanced ${
-                          trade.pnl > 0
+                        className={`trade-card-enhanced ${trade.pnl > 0
                             ? "profitable"
                             : trade.pnl < 0
                               ? "loss"
                               : ""
-                        }`}
+                          }`}
                       >
                         <div className="trade-card-header">
                           <span className="trade-strategy">
@@ -642,10 +641,10 @@ function calculateConsecutiveWins(trades) {
   if (!trades || trades.length === 0) return 0;
   let maxConsecutive = 0;
   let currentConsecutive = 0;
-  
+
   // Sort trades ascending by date
   const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
-  
+
   for (const trade of sortedTrades) {
     if (trade.pnl > 0) {
       currentConsecutive++;
@@ -662,10 +661,10 @@ function calculateConsecutiveLosses(trades) {
   if (!trades || trades.length === 0) return 0;
   let maxConsecutive = 0;
   let currentConsecutive = 0;
-  
+
   // Sort trades ascending by date
   const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
-  
+
   for (const trade of sortedTrades) {
     if (trade.pnl < 0) {
       currentConsecutive++;
