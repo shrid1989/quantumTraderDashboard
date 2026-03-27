@@ -1,6 +1,6 @@
 // Dashboard Page with enhanced metrics and interactivity
 import React, { useState, useEffect } from "react";
-import { dashboardAPI, tradesAPI } from "../services/api";
+import { tradesAPI } from "../services/api";
 import toast from "react-hot-toast";
 import {
   LineChart,
@@ -22,44 +22,15 @@ import "../styles/dashboard.css";
 const COLORS = ["#00897b", "#1976d2", "#f57c00", "#c62828", "#7b1fa2"];
 
 function DashboardPage() {
-  const [kpis, setKpis] = useState(null);
-  const [chartData, setChartData] = useState(null);
-  const [monthlyData, setMonthlyData] = useState(null);
   const [allTrades, setAllTrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("metrics");
-  const [timePeriod, setTimePeriod] = useState("day"); // all, day, week, month, year
+  const [timePeriod, setTimePeriod] = useState("month"); // all, day, week, month, year
 
   const fetchData = async () => {
     try {
-      // Fetch KPIs
-      const kpiResponse = await dashboardAPI.getKPIs();
-      setKpis(kpiResponse.data);
-
-      // Fetch Chart data (equity curve)
-      try {
-        const chartResponse = await dashboardAPI.getChartData();
-        setChartData(chartResponse.data);
-      } catch (err) {
-        console.warn("Chart data not available:", err);
-      }
-
-      // Fetch Monthly PnL
-      try {
-        const monthlyResponse = await dashboardAPI.getMonthlyPnL();
-        const monthlyObj =
-          monthlyResponse.data?.monthly_pnl || monthlyResponse.data || {};
-        const monthlyArray = Object.entries(monthlyObj).map(([month, pnl]) => ({
-          month: month.slice(5), // Show MM from YYYY-MM
-          pnl: pnl,
-        }));
-        setMonthlyData(monthlyArray);
-      } catch (err) {
-        console.warn("Monthly data not available:", err);
-      }
-
-      // Fetch all trades
+      // Fetch all trades to drive the entire dashboard
       const tradesResponse = await tradesAPI.getAllTrades(500);
       const trades = tradesResponse.data || [];
       setAllTrades(trades);
@@ -162,9 +133,10 @@ function DashboardPage() {
   };
 
   // Calculate strategy breakdown
-  const getStrategyBreakdown = () => {
+  const getStrategyBreakdown = (trades) => {
     const breakdown = {};
-    allTrades.forEach((trade) => {
+    if (!trades) return [];
+    trades.forEach((trade) => {
       if (!breakdown[trade.strategy]) {
         breakdown[trade.strategy] = { wins: 0, losses: 0, total: 0, pnl: 0 };
       }
@@ -198,7 +170,11 @@ function DashboardPage() {
   const winningTrades = filteredKPIs?.winning_trades || 0;
   const avgWinSize = filteredKPIs?.average_win || 0;
   const avgLossSize = filteredKPIs?.average_loss || 0;
-  const strategyBreakdown = getStrategyBreakdown();
+  const strategyBreakdown = getStrategyBreakdown(filteredTrades);
+
+  // Derive charts from filteredTrades
+  const equityCurveData = getEquityCurve(filteredTrades);
+  const monthlyChartData = getMonthlyData(filteredTrades);
 
   // Get time period label
   const getTimePeriodLabel = () => {
@@ -272,7 +248,7 @@ function DashboardPage() {
         </button>
       </div>
 
-      {kpis && (
+      {filteredKPIs && (
         <>
           {/* METRICS TAB */}
           {activeTab === "metrics" && (
@@ -331,15 +307,15 @@ function DashboardPage() {
                     <h3>Win Rate</h3>
                     <span className="kpi-icon">🎯</span>
                   </div>
-                  <p className="kpi-value">{kpis.win_rate.toFixed(2)}%</p>
+                  <p className="kpi-value">{filteredKPIs.win_rate.toFixed(2)}%</p>
                   <p className="kpi-detail">
-                    {winningTrades}/{kpis.total_trades} trades profitable
+                    {winningTrades}/{filteredKPIs.total_trades} trades profitable
                   </p>
                   <div className="kpi-progress-bar">
                     <div
                       className="progress-fill"
                       style={{
-                        width: `${kpis.win_rate}%`,
+                        width: `${filteredKPIs.win_rate}%`,
                         backgroundColor: "var(--accent-teal)",
                       }}
                     />
@@ -352,10 +328,10 @@ function DashboardPage() {
                     <h3>Total Trades</h3>
                     <span className="kpi-icon">📋</span>
                   </div>
-                  <p className="kpi-value">{kpis.total_trades}</p>
+                  <p className="kpi-value">{filteredKPIs.total_trades}</p>
                   <p className="kpi-detail">
                     ✅ {winningTrades} wins | ❌{" "}
-                    {kpis.total_trades - winningTrades} losses
+                    {filteredKPIs.total_trades - winningTrades} losses
                   </p>
                   <div className="kpi-breakdown">
                     <span className="breakdown-item">
@@ -373,18 +349,18 @@ function DashboardPage() {
                     <h3>Profit Factor</h3>
                     <span className="kpi-icon">📊</span>
                   </div>
-                  <p className="kpi-value">{kpis.profit_factor.toFixed(2)}</p>
+                  <p className="kpi-value">{filteredKPIs.profit_factor.toFixed(2)}</p>
                   <p className="kpi-detail">Gross profit / Gross loss ratio</p>
                   <div className="kpi-status">
-                    {kpis.profit_factor > 2 && (
+                    {filteredKPIs.profit_factor > 2 && (
                       <span className="status-badge excellent">
                         ✨ Excellent
                       </span>
                     )}
-                    {kpis.profit_factor > 1 && kpis.profit_factor <= 2 && (
+                    {filteredKPIs.profit_factor > 1 && filteredKPIs.profit_factor <= 2 && (
                       <span className="status-badge good">👍 Good</span>
                     )}
-                    {kpis.profit_factor <= 1 && (
+                    {filteredKPIs.profit_factor <= 1 && (
                       <span className="status-badge warning">⚠️ Monitor</span>
                     )}
                   </div>
@@ -411,11 +387,11 @@ function DashboardPage() {
                     ₹{Math.abs(avgLossSize).toFixed(2)}
                   </div>
                   <div className="metric-mini-label">
-                    {kpis.total_trades - winningTrades > 0
+                    {filteredKPIs.total_trades - winningTrades > 0
                       ? (
-                          avgLossSize *
-                          (kpis.total_trades - winningTrades)
-                        ).toFixed(0)
+                        avgLossSize *
+                        (filteredKPIs.total_trades - winningTrades)
+                      ).toFixed(0)
                       : 0}{" "}
                     total
                   </div>
@@ -423,25 +399,25 @@ function DashboardPage() {
                 <div className="metric-item">
                   <div className="metric-label">Largest Win</div>
                   <div className="metric-value">
-                    ₹{kpis.largest_win.toFixed(2)}
+                    ₹{filteredKPIs.largest_win.toFixed(2)}
                   </div>
                 </div>
                 <div className="metric-item">
                   <div className="metric-label">Largest Loss</div>
                   <div className="metric-value">
-                    ₹{kpis.largest_loss.toFixed(2)}
+                    ₹{filteredKPIs.largest_loss.toFixed(2)}
                   </div>
                 </div>
                 <div className="metric-item">
                   <div className="metric-label">Consecutive Wins</div>
                   <div className="metric-value">
-                    {allTrades.length > 0 ? calculateConsecutiveWins() : 0}
+                    {filteredTrades.length > 0 ? calculateConsecutiveWins(filteredTrades) : 0}
                   </div>
                 </div>
                 <div className="metric-item">
                   <div className="metric-label">Consecutive Losses</div>
                   <div className="metric-value">
-                    {allTrades.length > 0 ? calculateConsecutiveLosses() : 0}
+                    {filteredTrades.length > 0 ? calculateConsecutiveLosses(filteredTrades) : 0}
                   </div>
                 </div>
               </div>
@@ -452,17 +428,12 @@ function DashboardPage() {
           {activeTab === "charts" && (
             <div className="tab-content charts-content">
               {/* Equity Curve Chart */}
-              {chartData && chartData.cumulative_pnl && (
+              {equityCurveData && equityCurveData.length > 0 && (
                 <div className="chart-container">
                   <h2>📈 Equity Curve</h2>
                   <ResponsiveContainer width="100%" height={300}>
                     <LineChart
-                      data={chartData.dates
-                        .map((date, idx) => ({
-                          date: date.slice(-5), // MM-DD
-                          pnl: chartData.cumulative_pnl[idx],
-                        }))
-                        .slice(-30)}
+                      data={equityCurveData}
                       margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -489,11 +460,11 @@ function DashboardPage() {
               )}
 
               {/* Monthly PnL Chart */}
-              {monthlyData && monthlyData.length > 0 && (
+              {monthlyChartData && monthlyChartData.length > 0 && (
                 <div className="chart-container">
                   <h2>📊 Monthly P&L Breakdown</h2>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={monthlyData}>
+                    <BarChart data={monthlyChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                       <XAxis dataKey="month" />
                       <YAxis />
@@ -569,9 +540,9 @@ function DashboardPage() {
                             <span className="stat">
                               {strategy.total > 0
                                 ? (
-                                    (strategy.wins / strategy.total) *
-                                    100
-                                  ).toFixed(1)
+                                  (strategy.wins / strategy.total) *
+                                  100
+                                ).toFixed(1)
                                 : 0}
                               %
                             </span>
@@ -595,13 +566,12 @@ function DashboardPage() {
                     {filteredTrades.slice(0, 20).map((trade, idx) => (
                       <div
                         key={idx}
-                        className={`trade-card-enhanced ${
-                          trade.pnl > 0
+                        className={`trade-card-enhanced ${trade.pnl > 0
                             ? "profitable"
                             : trade.pnl < 0
                               ? "loss"
                               : ""
-                        }`}
+                          }`}
                       >
                         <div className="trade-card-header">
                           <span className="trade-strategy">
@@ -667,15 +637,75 @@ function DashboardPage() {
 }
 
 // Helper function to calculate consecutive wins
-function calculateConsecutiveWins() {
-  // Placeholder implementation
-  return 0;
+function calculateConsecutiveWins(trades) {
+  if (!trades || trades.length === 0) return 0;
+  let maxConsecutive = 0;
+  let currentConsecutive = 0;
+
+  // Sort trades ascending by date
+  const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  for (const trade of sortedTrades) {
+    if (trade.pnl > 0) {
+      currentConsecutive++;
+      if (currentConsecutive > maxConsecutive) maxConsecutive = currentConsecutive;
+    } else if (trade.pnl < 0) {
+      currentConsecutive = 0;
+    }
+  }
+  return maxConsecutive;
 }
 
 // Helper function to calculate consecutive losses
-function calculateConsecutiveLosses() {
-  // Placeholder implementation
-  return 0;
+function calculateConsecutiveLosses(trades) {
+  if (!trades || trades.length === 0) return 0;
+  let maxConsecutive = 0;
+  let currentConsecutive = 0;
+
+  // Sort trades ascending by date
+  const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  for (const trade of sortedTrades) {
+    if (trade.pnl < 0) {
+      currentConsecutive++;
+      if (currentConsecutive > maxConsecutive) maxConsecutive = currentConsecutive;
+    } else if (trade.pnl > 0) {
+      currentConsecutive = 0;
+    }
+  }
+  return maxConsecutive;
+}
+
+// Chart Helper: Calculate Equity Curve dynamically
+function getEquityCurve(trades) {
+  if (!trades || trades.length === 0) return [];
+  const sorted = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+  let runningPnl = 0;
+  return sorted.map(t => {
+    runningPnl += t.pnl;
+    return {
+      date: t.date ? t.date.slice(5, 10) : "", // MM-DD
+      pnl: runningPnl
+    };
+  });
+}
+
+// Chart Helper: Calculate Monthly PnL dynamically
+function getMonthlyData(trades) {
+  if (!trades || trades.length === 0) return [];
+  const byMonth = {};
+  trades.forEach(t => {
+    if (!t.date) return;
+    const month = t.date.slice(0, 7); // YYYY-MM
+    if (!byMonth[month]) byMonth[month] = 0;
+    byMonth[month] += t.pnl;
+  });
+  return Object.entries(byMonth)
+    .map(([month, pnl]) => ({
+      month: month.slice(5), // Make it MM
+      pnl
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month));
 }
 
 export default DashboardPage;
